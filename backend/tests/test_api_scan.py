@@ -130,3 +130,18 @@ def test_ai_failure_falls_back_to_ocr(auth_client, ai_on, monkeypatch):
     res = upload(auth_client, label_image(["INGREDIENTS: Rolled oats, sugar, salt."]))
     assert res.status_code == 200
     assert res.json()["ai_used"] is False
+
+
+def test_clean_label_has_no_false_quality_warnings(auth_client):
+    res = upload(auth_client, label_image(["INGREDIENTS: Rolled oats, sugar,", "sunflower oil, salt, cinnamon."]))
+    assert res.status_code == 200
+    assert res.json()["quality_warnings"] == []
+
+
+def test_washed_out_photo_is_flagged():
+    from app.services.ocr import assess_quality
+    washed = Image.new("L", (800, 600), 250)
+    ImageDraw.Draw(washed).text((40, 40), "sugar, salt", fill=240)
+    assert any("overexposed" in i for i in assess_quality(washed))
+    dark = Image.new("L", (800, 600), 15)
+    assert any("dark" in i for i in assess_quality(dark))

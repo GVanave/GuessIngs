@@ -67,11 +67,13 @@ def assess_quality(image: Image.Image) -> list[str]:
     """Return human-readable quality problems (empty list if the image looks fine)."""
     gray = image.convert("L")
     gray.thumbnail((800, 800))
-    brightness = ImageStat.Stat(gray).mean[0]
+    stat = ImageStat.Stat(gray)
+    brightness, contrast = stat.mean[0], stat.stddev[0]
     issues: list[str] = []
-    if brightness < 40:
+    # Only flag exposure when the text has also lost contrast: a crisp label on white paper is bright but fine.
+    if brightness < 40 and contrast < 30:
         issues.append("The photo is very dark. Try better lighting.")
-    elif brightness > 235:
+    elif brightness > 235 and contrast < 20:
         issues.append("The photo is overexposed. Avoid glare and direct light.")
     edges = gray.filter(ImageFilter.FIND_EDGES)
     sharpness = ImageStat.Stat(edges).var[0]

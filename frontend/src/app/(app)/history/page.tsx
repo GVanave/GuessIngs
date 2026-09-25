@@ -92,7 +92,8 @@ export default function HistoryPage() {
       ) : (
         <>
           <p className="mb-2 text-xs text-muted" aria-live="polite">{total} {total === 1 ? "analysis" : "analyses"}</p>
-          <ul className="space-y-2">
+          {/* Extra bottom room in select mode so the floating compare bar never covers the last rows. */}
+          <ul className={cn("space-y-2", selecting && "pb-28 lg:pb-20")}>
             {items.map((a) => (
               <li key={a.id}>
                 <AnalysisRow a={a} selectable={selecting} selected={selected.includes(a.id)} onToggle={() => toggle(a.id)} />

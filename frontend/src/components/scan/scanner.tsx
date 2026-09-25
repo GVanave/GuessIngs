@@ -189,7 +189,7 @@ export function Scanner() {
       <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
         <div className="space-y-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={step.preview} alt="Your label photo" className="aspect-[4/3] w-full rounded-2xl border border-border object-cover lg:aspect-auto" />
+          <img src={step.preview} alt="Your label photo" className="max-h-72 w-full rounded-2xl border border-border bg-surface-2 object-contain lg:max-h-none" />
           <p className="text-xs text-muted">
             {x.ai_used ? "Read with AI-assisted OCR." : `Read with OCR (confidence ${Math.round(x.ocr_confidence)}%).`} Please check
             the text before analyzing.

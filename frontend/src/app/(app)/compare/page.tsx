@@ -64,7 +64,7 @@ function Comparison({ ids }: { ids: string[] }) {
   const { items, best_id, shared_concerns } = q.data;
   return (
     <div className="space-y-5">
-      <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+      <div className="-mx-4 overflow-x-auto px-4 pb-2 pt-4 sm:mx-0 sm:px-0">
         <div className="grid min-w-max auto-cols-[minmax(220px,1fr)] grid-flow-col gap-3 sm:min-w-0">
           {items.map((a) => (
             <div key={a.id} className={cn("relative flex flex-col items-center rounded-2xl border bg-surface p-5 text-center shadow-card", a.id === best_id ? "border-good ring-2 ring-good/30" : "border-border")}>
