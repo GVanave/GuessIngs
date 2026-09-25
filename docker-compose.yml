@@ -1,0 +1,45 @@
+# Production-like stack: PostgreSQL + Redis + FastAPI + Next.js.
+#   cp .env.example .env   # then set SECRET_KEY (and optionally ANTHROPIC_API_KEY)
+#   docker compose up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: guessings
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guessings}
+      POSTGRES_DB: guessings
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guessings"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+
+  backend:
+    build: ./backend
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+psycopg://guessings:${POSTGRES_PASSWORD:-guessings}@db:5432/guessings
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      TRUST_PROXY: "true" # only reachable through the frontend proxy
+      CORS_ORIGINS: ""
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-claude-opus-5}
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_started }
+    expose: ["8000"]
+
+  frontend:
+    build:
+      context: ./frontend
+      args: { BACKEND_URL: http://backend:8000 }
+    ports: ["3000:3000"]
+    depends_on: [backend]
+
+volumes:
+  pgdata:

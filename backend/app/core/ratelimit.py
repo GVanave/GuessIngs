@@ -69,24 +69,29 @@ def reset_rate_limits() -> None:
 
 def client_ip(request: Request) -> str:
     if get_settings().trust_proxy:
+        client = request.headers.get("x-client-ip")  # set by the Next.js middleware
+        if client:
+            return client.strip()[:64]
         forwarded = request.headers.get("x-forwarded-for")
         if forwarded:
             return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
 
 
+def check_limit(key: str, limit: int, window: int = 60) -> None:
+    try:
+        count = backend().hit(key, window)
+    except Exception:  # never fail requests because the limiter store is down
+        return
+    if count > limit:
+        raise AppError(
+            429, "rate_limited", "Too many requests. Please wait a minute and try again.",
+            headers={"Retry-After": str(window)},
+        )
+
+
 def rate_limit(scope: str, setting_name: str, window: int = 60) -> Callable:
     def dependency(request: Request) -> None:
-        limit = getattr(get_settings(), setting_name)
-        key = f"{scope}:{client_ip(request)}"
-        try:
-            count = backend().hit(key, window)
-        except Exception:  # never fail requests because the limiter store is down
-            return
-        if count > limit:
-            raise AppError(
-                429, "rate_limited", "Too many requests. Please wait a minute and try again.",
-                headers={"Retry-After": str(window)},
-            )
+        check_limit(f"{scope}:{client_ip(request)}", getattr(get_settings(), setting_name), window)
 
     return dependency

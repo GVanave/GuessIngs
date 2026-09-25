@@ -6,7 +6,7 @@ from app.api.deps import get_current_user
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.errors import AppError
-from app.core.ratelimit import rate_limit
+from app.core.ratelimit import check_limit, rate_limit
 from app.core.security import (
     CSRF_COOKIE,
     DUMMY_HASH,
@@ -53,6 +53,8 @@ def register(body: RegisterIn, response: Response, db: Session = Depends(get_db)
 
 @router.post("/login", dependencies=[Depends(rate_limit("auth", "rate_limit_auth_per_minute"))])
 def login(body: LoginIn, response: Response, db: Session = Depends(get_db)):
+    # Also limit per account, so distributed guessing against one email is throttled.
+    check_limit(f"login-email:{body.email.lower()}", get_settings().rate_limit_auth_per_minute * 2, 300)
     user = db.execute(select(User).where(func.lower(User.email) == body.email.lower())).scalar_one_or_none()
     # Always run a bcrypt check so response time does not reveal whether the email exists.
     valid = verify_password(body.password, user.password_hash if user else DUMMY_HASH)

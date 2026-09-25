@@ -129,3 +129,25 @@ def test_security_headers_present(client):
     assert res.headers["x-content-type-options"] == "nosniff"
     assert res.headers["x-frame-options"] == "DENY"
     assert "default-src 'none'" in res.headers["content-security-policy"]
+
+
+def test_login_is_rate_limited_per_account_across_ips(client, monkeypatch):
+    monkeypatch.setenv("RATE_LIMIT_AUTH_PER_MINUTE", "100")
+    monkeypatch.setenv("TRUST_PROXY", "true")
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+    codes = [
+        client.post("/api/auth/login", json={"email": "victim@example.com", "password": "x"},
+                    headers={"x-client-ip": f"10.0.0.{i}"}).status_code
+        for i in range(201)
+    ]
+    assert codes[-1] == 429 and codes[0] == 401
+
+
+def test_client_ip_header_ignored_unless_proxy_trusted(client, monkeypatch):
+    monkeypatch.setenv("RATE_LIMIT_AUTH_PER_MINUTE", "2")
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+    codes = [client.post("/api/auth/login", json={"email": f"u{i}@example.com", "password": "x"},
+                         headers={"x-client-ip": f"10.0.0.{i}"}).status_code for i in range(3)]
+    assert codes == [401, 401, 429]  # spoofed header doesn't create new buckets
