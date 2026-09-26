@@ -94,6 +94,30 @@ With a key, label photos are read with Claude vision (structured JSON output val
 ingredients are classified, and results get a short AI-written summary. Default model: `claude-opus-5`
 (`AI_MODEL` to change). AI failures and refusals fall back gracefully to the deterministic path.
 
+## Deployment (Vercel + Render)
+
+The Next.js frontend runs on **Vercel**. The FastAPI backend needs the Tesseract binary and PostgreSQL,
+which Vercel's serverless functions can't provide, so it runs on **Render** from `backend/Dockerfile`
+(any Docker host works). The browser only talks to the Vercel domain; `/api/*` is proxied to the backend,
+so session cookies stay first-party.
+
+1. **Generate a proxy secret** (shared by both sides):
+   `python -c "import secrets; print(secrets.token_urlsafe(32))"`
+2. **Backend on Render** — Dashboard → *New* → *Blueprint* → pick this repo/branch. `render.yaml` creates
+   the `guessings-api` Docker service and a PostgreSQL database; migrations run on every start. When prompted,
+   set `PROXY_SECRET` (step 1) and optionally `ANTHROPIC_API_KEY`. `SECRET_KEY` is generated for you.
+   Note the service URL, e.g. `https://guessings-api.onrender.com`, and check `/api/health` returns `{"status":"ok"}`.
+3. **Frontend on Vercel** — *Add New Project* → import this repo → **Root Directory: `frontend`**
+   (framework preset Next.js is detected). Environment variables:
+   - `BACKEND_URL` = the Render URL from step 2 (used at build time for the proxy — redeploy if it changes)
+   - `PROXY_SECRET` = the value from step 1
+4. Deploy, open the Vercel URL, register and scan a label.
+
+The backend only trusts the forwarded client IP (used for rate limiting) on requests carrying
+`PROXY_SECRET`, so calling the Render URL directly can't bypass the limits. Render's free tier sleeps
+after inactivity (first request takes ~30–60 s) and its free PostgreSQL expires after 30 days — use a
+paid plan or an external database (e.g. Neon; `postgres://` URLs are accepted) for real use.
+
 ## Testing
 
 | Suite | Command | Count |

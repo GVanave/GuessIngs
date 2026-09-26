@@ -11,6 +11,9 @@ export function middleware(req: NextRequest) {
     const headers = new Headers(req.headers);
     const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
     headers.set("x-client-ip", forwarded || req.headers.get("x-real-ip") || "unknown");
+    // Proves to the backend that this request came through our proxy (see backend PROXY_SECRET).
+    headers.delete("x-proxy-secret");
+    if (process.env.PROXY_SECRET) headers.set("x-proxy-secret", process.env.PROXY_SECRET);
     return NextResponse.next({ request: { headers } });
   }
   const hasSession = Boolean(req.cookies.get("gi_session")?.value);

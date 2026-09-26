@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -151,3 +152,35 @@ def test_client_ip_header_ignored_unless_proxy_trusted(client, monkeypatch):
     codes = [client.post("/api/auth/login", json={"email": f"u{i}@example.com", "password": "x"},
                          headers={"x-client-ip": f"10.0.0.{i}"}).status_code for i in range(3)]
     assert codes == [401, 401, 429]  # spoofed header doesn't create new buckets
+
+
+def test_proxy_secret_gates_forwarded_client_ip(client, monkeypatch):
+    monkeypatch.setenv("RATE_LIMIT_AUTH_PER_MINUTE", "2")
+    monkeypatch.setenv("PROXY_SECRET", "s3cret-proxy-value")
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+
+    def login(ip, secret):
+        return client.post("/api/auth/login", json={"email": f"{ip}@example.com", "password": "x"},
+                           headers={"x-client-ip": ip, "x-proxy-secret": secret}).status_code
+
+    # Direct callers (no/wrong secret) can't invent IPs: they all share their real address's bucket.
+    assert [login(f"10.0.0.{i}", "wrong") for i in range(3)] == [401, 401, 429]
+    # Requests from the real proxy are limited per forwarded client.
+    assert [login(f"10.1.0.{i}", "s3cret-proxy-value") for i in range(3)] == [401, 401, 401]
+
+
+def test_hosted_postgres_urls_use_psycopg_driver(monkeypatch):
+    from app.core.config import Settings
+
+    assert Settings(database_url="postgres://u:p@h:5432/db").database_url == "postgresql+psycopg://u:p@h:5432/db"
+    assert Settings(database_url="postgresql://u:p@h/db").database_url == "postgresql+psycopg://u:p@h/db"
+    assert Settings(database_url="sqlite:///x.db").database_url == "sqlite:///x.db"
+
+
+@pytest.mark.parametrize("raw,expected", [("", []), ("https://a.com, https://b.com", ["https://a.com", "https://b.com"])])
+def test_cors_origins_env_formats(monkeypatch, raw, expected):
+    from app.core.config import Settings
+
+    monkeypatch.setenv("CORS_ORIGINS", raw)
+    assert Settings().cors_origins == expected

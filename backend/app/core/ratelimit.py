@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import threading
 import time
 from collections.abc import Callable
@@ -67,8 +68,15 @@ def reset_rate_limits() -> None:
     backend().reset()
 
 
+def _from_trusted_proxy(request: Request) -> bool:
+    settings = get_settings()
+    if settings.proxy_secret:
+        return hmac.compare_digest(request.headers.get("x-proxy-secret", ""), settings.proxy_secret)
+    return settings.trust_proxy
+
+
 def client_ip(request: Request) -> str:
-    if get_settings().trust_proxy:
+    if _from_trusted_proxy(request):
         client = request.headers.get("x-client-ip")  # set by the Next.js middleware
         if client:
             return client.strip()[:64]
