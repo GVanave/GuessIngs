@@ -1,8 +1,9 @@
 // Export launch.html to an MP4: renders every frame deterministically in headless Chromium
-// and pipes it to ffmpeg together with the soundtrack from soundtrack.py.
+// and pipes it to ffmpeg together with soundtrack.wav.
 //
-//   python3 soundtrack.py                 # writes soundtrack.wav
+//   python3 bollywood_soundtrack.py       # writes soundtrack.wav (or soundtrack.py for the electronic version)
 //   node render.mjs [out.mp4] [fps]       # needs playwright + ffmpeg (FFMPEG env var to override)
+//   AUDIO=song.mp3 node render.mjs        # use any other (licensed) audio file instead
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -16,7 +17,7 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 const out = path.resolve(process.argv[2] ?? path.join(dir, 'voltra-launch.mp4'));
 const fps = Number(process.argv[3] ?? 30);
 const ffmpeg = process.env.FFMPEG ?? 'ffmpeg';
-const audio = path.join(dir, 'soundtrack.wav');
+const audio = path.resolve(process.env.AUDIO ?? path.join(dir, 'soundtrack.wav'));
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
