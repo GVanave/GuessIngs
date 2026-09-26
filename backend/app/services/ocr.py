@@ -93,6 +93,17 @@ def _prepare_for_ocr(image: Image.Image) -> Image.Image:
     return gray.filter(ImageFilter.SHARPEN)
 
 
+def _join_line(words: list[tuple[int, int, int, str]]) -> str:
+    """Join a line's words, marking large horizontal gaps (other columns, glare noise) with a tab."""
+    words = sorted(words)
+    heights = sorted(h for _, _, h, _ in words)
+    gap_limit = 2.5 * heights[len(heights) // 2]
+    out = words[0][3]
+    for (left, width, _, _), (next_left, _, _, word) in zip(words, words[1:], strict=False):
+        out += ("\t" if next_left - (left + width) > gap_limit else " ") + word
+    return out
+
+
 def run_ocr(image: Image.Image) -> OcrResult:
     try:
         import pytesseract
@@ -111,7 +122,7 @@ def run_ocr(image: Image.Image) -> OcrResult:
         log.error("OCR failed: %s", type(exc).__name__)
         raise ImageError("ocr_failed", "We couldn't read text from this image. Try again or type the ingredients.") from exc
 
-    lines: dict[tuple[int, int, int], list[str]] = {}
+    lines: dict[tuple[int, int, int], list[tuple[int, int, int, str]]] = {}
     confidences: list[float] = []
     for i, word in enumerate(data["text"]):
         word = word.strip()
@@ -120,7 +131,7 @@ def run_ocr(image: Image.Image) -> OcrResult:
             continue
         confidences.append(conf)
         key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
-        lines.setdefault(key, []).append(word)
-    text = "\n".join(" ".join(words) for _, words in sorted(lines.items()))
+        lines.setdefault(key, []).append((data["left"][i], data["width"][i], data["height"][i], word))
+    text = "\n".join(_join_line(words) for _, words in sorted(lines.items()))
     confidence = sum(confidences) / len(confidences) if confidences else 0.0
     return OcrResult(text=text, confidence=confidence)

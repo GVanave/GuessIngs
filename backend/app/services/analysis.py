@@ -72,7 +72,7 @@ def run_analysis(
     lines = result_dict["lines"]
 
     name = (product_name or "").strip() or DEFAULT_PRODUCT_NAME
-    product_type = insights.detect_product_type(name, [i.canonical for i in outcome.items])
+    product_type = insights.detect_product_type(name, [i.key for i in outcome.items])
     explanation = insights.build_explanation(result.score, result.verdict.value, result.nova_group, lines)
 
     prefs = user.preferences or {}

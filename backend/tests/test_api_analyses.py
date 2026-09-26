@@ -192,3 +192,12 @@ def test_database_failure_returns_503(auth_client, monkeypatch):
 ])
 def test_invalid_payloads_rejected(auth_client, payload):
     assert auth_client.post("/api/analyses", json=payload).status_code == 422
+
+
+@pytest.mark.parametrize("name", ["Coke Classic", "Untitled product"])
+def test_soft_drinks_are_detected_from_name_or_label(auth_client, name):
+    data = analyze(auth_client, text="Carbonated water, sugar, colour (150d), food acid (338), flavour, caffeine",
+                   product_name=name)
+    assert data["product"]["category"] == "soft_drink"
+    assert (data["score"], data["verdict"]) == (34, "RED")
+    assert any("Sparkling water" in a["title"] for a in data["alternatives"])

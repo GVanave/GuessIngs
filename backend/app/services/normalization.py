@@ -54,6 +54,7 @@ FUNCTIONAL_CLASSES = {
     "color", "colors", "coloring", "food color", "food colors", "permitted synthetic food color",
     "permitted natural color", "color added", "colors added",
     "acidity regulator", "acidity regulators", "acidulant", "acidulants", "acid", "acids",
+    "food acid", "food acids", "mineral salt", "mineral salts", "vegetable gum", "vegetable gums",
     "thickener", "thickeners", "thickening agent", "thickening agents",
     "stabilizer", "stabilizers", "gelling agent", "gelling agents",
     "sweetener", "sweeteners", "artificial sweetener", "artificial sweeteners",
@@ -68,6 +69,12 @@ FUNCTIONAL_CLASSES = {
     "emulsifier and stabilizer", "emulsifiers and stabilizers", "firming agents",
 }
 
+# Words commonly merged by OCR on small label print.
+_OCR_MERGES = [
+    (r"\bfoodacid", "food acid"),
+    (r"\bacidityregulator", "acidity regulator"),
+]
+
 _SPELLING = [
     (r"colour", "color"),
     (r"flavour", "flavor"),
@@ -80,6 +87,7 @@ _SPELLING = [
     (r"sulphite", "sulfite"),
     (r"sulphur", "sulfur"),
     (r"aluminium", "aluminum"),
+    *_OCR_MERGES,
 ]
 
 _STOP_PATTERN = re.compile(
@@ -87,10 +95,13 @@ _STOP_PATTERN = re.compile(
     r"contains (?:milk|soy|soya|wheat|eggs?|tree nuts?|nuts?|peanuts?|fish|shellfish|sesame|gluten|mustard|celery)\b|"
     r"may contain|may also contain|made in a facility|produced in a facility|nutrition(?:al)? (?:facts|information)|"
     r"best before|use by|manufactured (?:by|for)|marketed by|packed by|store in|storage|keep refrigerated|"
-    r"net (?:wt|weight|quantity)|distributed by|directions)",
+    r"net (?:wt|weight|quantity)|distributed by|directions|made in\b|product of\b|contains caffeine|"
+    r"serving size|servings per)",
     re.IGNORECASE,
 )
 _LABEL_PATTERN = re.compile(r"\bingredients?\s*(?:list)?\s*[:\-–]", re.IGNORECASE)
+# Some labels introduce the list with e.g. "Cola Drink Contains:" instead of "Ingredients:".
+_CONTAINS_LABEL = re.compile(r"\bcontains\s*:", re.IGNORECASE)
 _LESS_THAN_PATTERN = re.compile(
     r"(?:contains\s+)?(?:less than|<)\s*\d+(?:\.\d+)?\s*%\s*(?:or less\s*)?(?:of\s*)?(?:each\s+of\s+)?(?:the following\s*)?:?"
     r"|contains\s+\d+(?:\.\d+)?\s*%\s*or\s+less\s+of\s*(?:the following\s*)?:?"
@@ -130,6 +141,9 @@ def _clean_text(text: str) -> str:
     # Re-join words hyphenated across OCR line breaks.
     text = re.sub(r"(\w)-\s*\n\s*(\w)", r"\1\2", text)
     label = _LABEL_PATTERN.search(text)
+    if not label:
+        # "…Contains: a, b, c" is the list itself (not an allergen statement) when a comma list follows.
+        label = next((m for m in _CONTAINS_LABEL.finditer(text) if "," in text[m.end(): m.end() + 80]), None)
     if label:
         text = text[label.end():]
     stop = _STOP_PATTERN.search(text)
@@ -175,13 +189,27 @@ def _split_parenthetical(item: str) -> tuple[str, str | None, str]:
     return item[:start], item[start + 1 :], ""
 
 
+_BARE_INS = re.compile(r"(\d{3,4})\s*([a-z]?)(?:\s*\(([ivx]+)\))?")
+
+
+def _as_e_number(text: str) -> str | None:
+    """'e330', 'INS 330', or a bare additive number like '150d' / '338' (AU/NZ labels) → 'e150d'."""
+    key = normalize_name(text)
+    if re.fullmatch(r"e\d{3,4}[a-z]{0,3}", key):
+        return key
+    m = _BARE_INS.fullmatch(key)
+    if m and 100 <= int(m.group(1)) <= 1521:
+        return f"e{m.group(1)}{m.group(2)}{m.group(3) or ''}"
+    return None
+
+
 def _is_annotation(text: str) -> bool:
     key = normalize_name(text)
     if not key:
         return True
     if key in FUNCTIONAL_CLASSES:
         return True
-    if re.fullmatch(r"e\d{3,4}[a-z]{0,3}", key):
+    if _as_e_number(key):
         return True
     if re.fullmatch(r"[\d\s.,%<>]+", key):
         return True
@@ -205,6 +233,11 @@ _GENERIC_NOUNS = {"oil", "oils", "fat", "fats", "flour", "flours", "starch", "le
                   "fiber", "syrup", "gum", "gums", "seeds", "nuts", "milk", "vinegar"}
 
 
+def _display(item: str) -> str:
+    """Human-readable ingredient text: drop leading OCR debris such as '® _' and stray punctuation."""
+    return re.sub(r"^[^A-Za-z0-9(]+", "", item).strip(" .,;") or item.strip()
+
+
 def _expand(item: str, position: int, parent: str | None, out: list[ParsedIngredient]) -> None:
     # "Emulsifier: soy lecithin" → "soy lecithin"
     colon = re.match(r"^\s*([^:()]{2,40}):\s*(.+)$", item)
@@ -216,23 +249,23 @@ def _expand(item: str, position: int, parent: str | None, out: list[ParsedIngred
 
     if inner is None:
         if head_key and _has_letters(head_key):
-            out.append(ParsedIngredient(item.strip(), [head_key], position, parent))
+            out.append(ParsedIngredient(_display(item), [head_key], position, parent))
         return
 
     inner_parts = _split_top_level(inner)
     annotations = [p for p in inner_parts if _is_annotation(p)]
     children = [p for p in inner_parts if not _is_annotation(p)]
-    hints = [normalize_name(a) for a in annotations if re.fullmatch(r"e\d{3,4}[a-z]{0,3}", normalize_name(a))]
+    hints = [h for h in (_as_e_number(a) for a in annotations) if h]
 
     if head_key in FUNCTIONAL_CLASSES or not head_key:
         for child in children:
             _expand(child, position, parent, out)
         for hint in hints if not children else []:
-            out.append(ParsedIngredient(hint.upper(), [hint], position, parent))
+            out.append(ParsedIngredient(_display(item), [hint], position, parent))
         return
 
     if not children:
-        out.append(ParsedIngredient(item.strip(), [head_key, *hints], position, parent, hints))
+        out.append(ParsedIngredient(_display(item), [head_key, *hints], position, parent, hints))
         return
 
     if len(children) == 1 and len(normalize_name(children[0]).split()) <= 2 and "(" not in children[0]:
@@ -244,7 +277,7 @@ def _expand(item: str, position: int, parent: str | None, out: list[ParsedIngred
         for c in candidates:
             if c and c not in seen:
                 seen.append(c)
-        out.append(ParsedIngredient(item.strip(), seen, position, parent, hints))
+        out.append(ParsedIngredient(_display(item), seen, position, parent, hints))
         return
 
     # Compound ingredient: flatten its sub-ingredients under the parent's position.
@@ -307,6 +340,41 @@ def parse_ingredients(text: str | None) -> list[ParsedIngredient]:
     return parsed
 
 
+_ABBREVIATIONS = {"no", "vit", "approx", "st", "min", "max", "incl"}
+
+
+def _cut_at_list_end(text: str) -> str:
+    """OCR text keeps running after the list; the list ends at the first sentence-ending full stop."""
+    depth = 0
+    for i, ch in enumerate(text):
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth = max(0, depth - 1)
+        elif ch == "." and depth == 0 and "," in text[:i]:
+            nxt = text[i + 1 : i + 2]
+            prev_word = re.findall(r"[a-z]+$", text[:i].lower())
+            if (not nxt or nxt.isspace()) and not re.match(r"\s*\d", text[i + 1 :]) and not (
+                prev_word and prev_word[0] in _ABBREVIATIONS
+            ):
+                return text[:i]
+    return text
+
+
 def extract_ingredient_section(text: str) -> str:
-    """Return the ingredient section of a label text (label prefix and trailing statements removed)."""
-    return " ".join(_clean_text(text).split())
+    """Return the ingredient list from OCR'd label text.
+
+    OCR lines may contain several layout segments separated by tabs (large horizontal gaps, see
+    ``ocr.run_ocr``); only the longest segment of each line is kept, which drops glare noise and
+    text from neighbouring columns.
+    """
+    lines = []
+    for line in text.splitlines():
+        segments = [seg.strip() for seg in line.split("\t") if seg.strip()]
+        if segments:
+            lines.append(max(segments, key=len))
+    section = " ".join(_cut_at_list_end(_clean_text("\n".join(lines))).split())
+    for pattern, fixed in _OCR_MERGES:
+        section = re.sub(pattern, fixed, section, flags=re.IGNORECASE)
+    # Tidy each item for the user to review: drop leading debris such as "® _".
+    return ", ".join(d for d in (_display(item) for item in _split_top_level(section)) if d)

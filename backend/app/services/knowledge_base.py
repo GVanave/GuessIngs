@@ -199,6 +199,7 @@ _add("glycerin", EMU, "glycerol", "vegetable glycerin", "e422")
 
 # --- Neutral / common additives --------------------------------------------
 _add("citric acid", NA, "e330")
+_add("caffeine", NA, "added caffeine")
 _add("ascorbic acid", NA, "vitamin c", "e300", "sodium ascorbate", "e301")
 _add("tocopherols", NA, "mixed tocopherols", "vitamin e", "e306", "e307", "rosemary extract")
 _add("lactic acid", NA, "e270")

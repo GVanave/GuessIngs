@@ -98,7 +98,7 @@ def build_explanation(score: int, verdict: str, nova_group: int, lines: list[dic
 # ------------------------------------------------------------- alternatives --
 PRODUCT_TYPES: list[tuple[str, re.Pattern[str]]] = [
     ("snack_bar", re.compile(r"\b(bar|bars|protein bar|granola bar|energy bar)\b")),
-    ("soft_drink", re.compile(r"\b(soda|cola|soft drink|energy drink|lemonade|carbonated)\b|\bcarbonated water\b")),
+    ("soft_drink", re.compile(r"\b(soda|cola|coke|pepsi|soft drink|energy drink|lemonade|carbonated|fizzy)\b")),
     ("breakfast_cereal", re.compile(r"\b(cereal|flakes|granola|muesli|loops|puffs|corn flakes)\b")),
     ("cookies", re.compile(r"\b(cookie|cookies|biscuit|biscuits|cracker|crackers|wafer)\b")),
     ("chips", re.compile(r"\b(chips|crisps|nachos|puffs|namkeen|bhujia)\b")),

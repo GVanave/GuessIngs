@@ -145,3 +145,30 @@ def test_washed_out_photo_is_flagged():
     assert any("overexposed" in i for i in assess_quality(washed))
     dark = Image.new("L", (800, 600), 15)
     assert any("dark" in i for i in assess_quality(dark))
+
+
+def test_ocr_marks_large_gaps_between_layout_columns():
+    from app.services.ocr import _join_line
+
+    words = [(10, 60, 20, "Carbonated"), (75, 50, 20, "water,"), (400, 30, 20, "Be")]
+    assert _join_line(words) == "Carbonated water,\tBe"
+
+
+def test_white_on_red_label_photo_is_read(auth_client):
+    """Synthetic version of a real bottle label: white text on red, 'Contains:' header, AU/NZ additive numbers."""
+    img = Image.new("RGB", (1400, 700), (200, 20, 30))
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.truetype(FONT, 42)
+    for i, line in enumerate(["Cola Drink Contains:", "Carbonated water, sugar,", "colour (150d), food acid (338),",
+                              "flavour, caffeine.", "CONTAINS CAFFEINE."]):
+        draw.text((60, 60 + 80 * i), line, fill="white", font=font)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=92)
+    res = upload(auth_client, buf.getvalue(), "cola.jpg", "image/jpeg")
+    assert res.status_code == 200, res.text
+    text = res.json()["ingredients_text"].lower()
+    assert "carbonated water" in text and "150d" in text and "caffeine" in text and "contains" not in text
+    analysis = auth_client.post("/api/analyses", json={"ingredients_text": res.json()["ingredients_text"],
+                                                       "product_name": "Cola", "source": "upload"}).json()
+    # 100 − 25 sugar − 8 caramel color − 5 phosphoric acid − 8 flavour − 20 NOVA 4 = 34
+    assert (analysis["score"], analysis["verdict"]) == (34, "RED")
