@@ -86,7 +86,7 @@ class AnalyzeIn(BaseModel):
     product_name: str | None = Field(default=None, max_length=160)
     brand: str | None = Field(default=None, max_length=120)
     sodium_mg_per_100g: float | None = Field(default=None, ge=0, le=40000)
-    source: Literal["manual", "upload", "camera"] = "manual"
+    source: Literal["manual", "upload", "camera", "voice"] = "manual"
     ocr_text: str | None = Field(default=None, max_length=20000)
 
     @field_validator("product_name", "brand")
@@ -104,6 +104,13 @@ class ExtractionOut(BaseModel):
     ocr_confidence: float
     ai_used: bool
     quality_warnings: list[str]
+
+
+class VoiceExtractionOut(BaseModel):
+    transcript: str
+    ingredients_text: str
+    language: str | None
+    duration_seconds: float | None
 
 
 class ScoreLineOut(BaseModel):

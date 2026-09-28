@@ -30,6 +30,9 @@ services:
         sync: false
       - key: AI_MODEL
         value: claude-opus-5
+      # Optional: enables voice input (any OpenAI-compatible speech-to-text endpoint).
+      - key: STT_API_KEY
+        sync: false
 
 databases:
   - name: guessings-db

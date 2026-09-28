@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import analyses, auth, meta, products, scan, users
+from app.api import analyses, auth, meta, products, scan, users, voice
 from app.core.config import get_settings
 from app.core.db import Base, get_engine
 from app.core.errors import install_error_handlers
@@ -61,7 +61,7 @@ def create_app() -> FastAPI:
         return response
 
     default_limit = rate_limit("default", "rate_limit_default_per_minute")
-    for router in (auth.router, users.router, scan.router, analyses.router, products.router, meta.router):
+    for router in (auth.router, users.router, scan.router, analyses.router, products.router, voice.router, meta.router):
         app.include_router(router, prefix="/api", dependencies=[Depends(default_limit)])
 
     return app

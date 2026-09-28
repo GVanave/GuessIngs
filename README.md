@@ -90,6 +90,23 @@ docker compose up --build       # http://localhost:3000
 ### AI configuration
 
 AI is optional. Without `ANTHROPIC_API_KEY` the app uses Tesseract OCR and the deterministic knowledge base only.
+
+### Voice input (optional)
+
+`POST /api/voice/transcribe` (multipart: `file`, optional two-letter `language`) turns a spoken ingredient list into
+ingredient text. The clip (WAV, MP3, M4A, WebM, OGG or FLAC, max `MAX_AUDIO_MB`, default 10) is validated by its
+magic bytes and sent to any OpenAI-compatible `/audio/transcriptions` endpoint — OpenAI Whisper by default, or Groq /
+a self-hosted whisper server via `STT_API_URL` and `STT_MODEL`. Set `STT_API_KEY` to enable it; otherwise it returns 503.
+
+The transcript is converted deterministically: spoken "comma" / "open bracket" / "percent" / "E four seven one" become
+`,` `(` `%` `E471`, "and" separates unpunctuated lists, and trailing sentences such as "Contains wheat." are dropped.
+
+```json
+{ "transcript": "Ingredients are oats, sugar and salt.", "ingredients_text": "oats, sugar, salt",
+  "language": "english", "duration_seconds": 2.4 }
+```
+
+Review the text, then submit it to `POST /api/analyses` with `"source": "voice"`.
 With a key, label photos are read with Claude vision (structured JSON output validated with Pydantic), unknown
 ingredients are classified, and results get a short AI-written summary. Default model: `claude-opus-5`
 (`AI_MODEL` to change). AI failures and refusals fall back gracefully to the deterministic path.

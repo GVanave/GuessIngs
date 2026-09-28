@@ -80,7 +80,7 @@ class Analysis(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
 
-    source: Mapped[str] = mapped_column(String(20))  # manual | upload | camera
+    source: Mapped[str] = mapped_column(String(20))  # manual | upload | camera | voice
     raw_text: Mapped[str] = mapped_column(Text)  # ingredient text that was scored
     ocr_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     input_hash: Mapped[str] = mapped_column(String(64), index=True)
