@@ -1,0 +1,37 @@
+DAY 1 — Why Germany is becoming the top study destination in 2026
+Format: Reel (reel_day01_germany_top_destination.mp4, 37s, 1080x1920) or Carousel (carousel/slide_01-10.png, 1080x1350)
+Cover: reel_cover.png
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CAPTION (copy-paste):
+
+India is now the #1 source of international students in Germany. 🇮🇳🇩🇪
+
+In Winter Semester 2024/25, nearly 59,000 Indian students were enrolled — a big jump from previous years.
+
+Why are so many Indian students choosing Germany?
+• Public universities with very low or zero tuition
+• Strong focus on Engineering, IT, Management & Applied Sciences
+• English-taught Master's programmes available
+• Post-study work options and pathway to long-term stay
+• Globally respected degrees
+
+Germany is no longer a "backup" option. For many Indian students, it has become the first choice.
+
+📌 Save this post if you are planning to study in Germany.
+
+#studyingermany #germanyforindians #indianstudentsingermany #mastersingermany #studyabroad #studyabroadindia #germanuniversities #freeeducation #tuitionfree #mscingermany #germanyvisa #studentvisa #engineeringingermany #lifeingermany #indiansingermany #studyineurope #higherstudies #germany2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+REEL TIMELINE
+00.0–04.0  Hook: "#1 — India is now Germany's top source of international students"
+04.0–09.0  Counter to 59,000 — Indian students, Winter Semester 2024/25
+09.0–12.2  "Why are so many Indian students choosing Germany?"
+12.2–28.4  5 reasons, ~3 s each (tuition, fields, English-taught, post-study work, global degrees)
+28.4–33.0  "No longer a 'backup' option" → "first choice."
+33.0–37.0  CTA: Save this post · Day 2 is next
+
+AUDIO: the video has a silent track on purpose — add a trending audio in the Instagram app
+(better reach than baked-in music). Beat-sync tip: pick an audio with a drop around 4 s (counter start).
+
+Re-render after editing src/reel.html:  python3 src/render.py   (needs: pip install playwright imageio-ffmpeg)

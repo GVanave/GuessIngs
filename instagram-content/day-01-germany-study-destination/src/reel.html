@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Day 1 Reel</title>
+<link href="fonts.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0e12;
+    --ink: #f5f3ee;
+    --muted: #a9a8a3;
+    --gold: #ffce00;
+    --red: #e3242b;
+    --card: #17181e;
+    --line: #2a2b33;
+    --padTop: 250px;
+    --padBot: 400px;
+    --padX: 96px;
+  }
+  body.carousel { --padTop: 120px; --padBot: 130px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: var(--w); height: var(--h); overflow: hidden; background: var(--bg); }
+  body { font-family: "Inter", sans-serif; color: var(--ink); position: relative; }
+
+  /* animated background */
+  .bg { position: absolute; inset: 0; overflow: hidden; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(140px); opacity: .32; }
+  .blob.a { width: 820px; height: 820px; background: var(--gold); }
+  .blob.b { width: 760px; height: 760px; background: var(--red); opacity: .22; }
+  .grain { position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 6px 6px; }
+  .flag { position: absolute; left: 0; right: 0; top: 0; height: 14px; display: flex; }
+  .flag i { flex: 1; } .flag i:nth-child(1){background:#000} .flag i:nth-child(2){background:var(--red)} .flag i:nth-child(3){background:var(--gold)}
+
+  .brandbar { position: absolute; left: var(--padX); right: var(--padX); top: calc(var(--padTop) - 110px);
+    display: flex; justify-content: space-between; align-items: center; font: 600 30px "Inter"; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  body.carousel .brandbar { top: 52px; }
+  .brandbar .day { color: var(--bg); background: var(--gold); padding: 10px 22px; border-radius: 999px; letter-spacing: .08em; }
+
+  .scene { position: absolute; left: var(--padX); right: var(--padX); top: var(--padTop); bottom: var(--padBot);
+    display: flex; flex-direction: column; justify-content: center; opacity: 0; }
+  [data-d] { opacity: 0; will-change: transform, opacity; }
+
+  h1, h2, .big { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; letter-spacing: -0.02em; line-height: 1.02; }
+  .gold { color: var(--gold); }
+  .muted { color: var(--muted); }
+
+  /* s1 hook */
+  .hash { font-size: 440px; line-height: .85; color: var(--gold); margin-left: -18px; }
+  body.carousel .hash { font-size: 360px; }
+  .s1 h1 { font-size: 96px; margin-top: 40px; }
+  .s1 p { font: 500 40px/1.35 "Inter"; color: var(--muted); margin-top: 36px; }
+
+  /* s2 stat */
+  .chip { align-self: flex-start; font: 600 32px "Inter"; padding: 14px 28px; border: 2px solid var(--line); border-radius: 999px; color: var(--ink); background: rgba(255,255,255,.03); }
+  .s2 .nearly { font: 500 44px "Inter"; color: var(--muted); margin-top: 60px; }
+  .s2 .count { font-size: 250px; color: var(--gold); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .s2 h2 { font-size: 80px; margin-top: 20px; }
+  .jump { display: flex; align-items: center; gap: 22px; margin-top: 56px; font: 600 40px "Inter"; }
+  .jump svg { width: 64px; height: 64px; flex: none; }
+
+  /* s3 question */
+  .s3 h2 { font-size: 118px; }
+  .s3 .q { color: var(--gold); }
+  .s3 p { font: 500 42px "Inter"; color: var(--muted); margin-top: 48px; }
+
+  /* reasons */
+  .reason .num { font: 600 36px "Inter"; letter-spacing: .12em; color: var(--muted); }
+  .reason .num b { color: var(--gold); font-weight: 600; }
+  .reason .icon { width: 190px; height: 190px; border-radius: 48px; background: var(--card); border: 2px solid var(--line);
+    display: grid; place-items: center; margin-top: 56px; }
+  .reason .icon svg { width: 110px; height: 110px; }
+  .reason h2 { font-size: 104px; margin-top: 60px; }
+  .reason p { font: 500 44px/1.35 "Inter"; color: var(--muted); margin-top: 36px; max-width: 860px; }
+  .dots { display: flex; gap: 14px; margin-top: 70px; }
+  .dots i { width: 64px; height: 10px; border-radius: 6px; background: var(--line); }
+  .dots i.on { background: var(--gold); }
+
+  /* backup */
+  .s9 h2 { font-size: 104px; }
+  .strike { position: relative; display: inline-block; color: var(--muted); }
+  .strike::after { content: ""; position: absolute; left: -8px; top: 52%; height: 14px; width: calc((100% + 16px) * var(--s, 0)); background: var(--red); border-radius: 8px; transform: rotate(-4deg); }
+  .s9 .first { font-size: 150px; color: var(--gold); margin-top: 26px; }
+  .s9 p { font: 500 44px "Inter"; color: var(--muted); margin-top: 70px; }
+
+  /* cta */
+  .s10 { align-items: flex-start; }
+  .bm { width: 200px; height: 200px; border-radius: 50%; background: var(--gold); display: grid; place-items: center; }
+  .bm svg { width: 96px; height: 96px; }
+  .s10 h2 { font-size: 124px; margin-top: 64px; }
+  .s10 p { font: 500 46px/1.35 "Inter"; color: var(--muted); margin-top: 28px; }
+  .s10 .next { margin-top: 80px; font: 600 38px "Inter"; padding: 22px 34px; border-radius: 22px; background: var(--card); border: 2px solid var(--line); }
+
+  .swipe { display: none; }
+  body.carousel .swipe { display: flex; position: absolute; right: var(--padX); bottom: 60px; font: 600 32px "Inter"; color: var(--muted); gap: 14px; align-items: center; }
+  .pager { display: none; }
+  body.carousel .pager { display: block; position: absolute; left: var(--padX); bottom: 60px; font: 600 30px "Inter"; color: var(--muted); letter-spacing: .1em; }
+</style>
+</head>
+<body>
+<div class="bg">
+  <div class="blob a" id="blobA"></div>
+  <div class="blob b" id="blobB"></div>
+  <div class="grain"></div>
+  <div class="flag"><i></i><i></i><i></i></div>
+</div>
+
+<div class="brandbar"><span>Study in Germany</span><span class="day">Day 1</span></div>
+
+<!-- 1 hook -->
+<section class="scene s1" id="s1">
+  <div class="big hash" data-d="0" data-anim="pop">#1</div>
+  <h1 data-d="0.25">India is now Germany's top source of international students.</h1>
+  <p data-d="0.7">Here's what's driving it →</p>
+</section>
+
+<!-- 2 stat -->
+<section class="scene s2" id="s2">
+  <div class="chip" data-d="0.1">Winter Semester 2024/25</div>
+  <div class="nearly" data-d="0.25">Nearly</div>
+  <div class="big count" data-d="0.3" data-count="59000" data-count-dur="1.8">0</div>
+  <h2 data-d="0.6">Indian students enrolled in Germany</h2>
+  <div class="jump" data-d="1.4">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#ffce00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+    A big jump from previous years
+  </div>
+</section>
+
+<!-- 3 question -->
+<section class="scene s3" id="s3">
+  <h2 data-d="0.1">Why are so many Indian students choosing</h2>
+  <h2 class="q" data-d="0.45">Germany?</h2>
+  <p data-d="0.9">5 reasons →</p>
+</section>
+
+<!-- 4-8 reasons -->
+<section class="scene reason" id="s4">
+  <div class="num" data-d="0.05"><b>01</b> / 05</div>
+  <div class="icon" data-d="0.15" data-anim="pop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#ffce00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/><path d="M22 9v6"/></svg>
+  </div>
+  <h2 data-d="0.3">Low or <span class="gold">zero</span> tuition</h2>
+  <p data-d="0.55">Public universities charge very little — or nothing at all.</p>
+  <div class="dots" data-d="0.7"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+</section>
+
+<section class="scene reason" id="s5">
+  <div class="num" data-d="0.05"><b>02</b> / 05</div>
+  <div class="icon" data-d="0.15" data-anim="pop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#ffce00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </div>
+  <h2 data-d="0.3">Engineering, IT, <span class="gold">Management</span> &amp; Applied Sciences</h2>
+  <p data-d="0.55">Strong focus on the fields Indian students want most.</p>
+  <div class="dots" data-d="0.7"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+</section>
+
+<section class="scene reason" id="s6">
+  <div class="num" data-d="0.05"><b>03</b> / 05</div>
+  <div class="icon" data-d="0.15" data-anim="pop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#ffce00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 9.5h-1.5v5H9M7.5 12h1.3M11.5 14.5v-5l3 5v-5"/></svg>
+  </div>
+  <h2 data-d="0.3"><span class="gold">English-taught</span> Master's programmes</h2>
+  <p data-d="0.55">Many courses are taught fully in English.</p>
+  <div class="dots" data-d="0.7"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+</section>
+
+<section class="scene reason" id="s7">
+  <div class="num" data-d="0.05"><b>04</b> / 05</div>
+  <div class="icon" data-d="0.15" data-anim="pop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#ffce00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></svg>
+  </div>
+  <h2 data-d="0.3"><span class="gold">Post-study</span> work options</h2>
+  <p data-d="0.55">Plus a pathway to long-term stay.</p>
+  <div class="dots" data-d="0.7"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+</section>
+
+<section class="scene reason" id="s8">
+  <div class="num" data-d="0.05"><b>05</b> / 05</div>
+  <div class="icon" data-d="0.15" data-anim="pop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#ffce00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></svg>
+  </div>
+  <h2 data-d="0.3"><span class="gold">Globally</span> respected degrees</h2>
+  <p data-d="0.55">A German degree opens doors worldwide.</p>
+  <div class="dots" data-d="0.7"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+</section>
+
+<!-- 9 backup -->
+<section class="scene s9" id="s9">
+  <h2 data-d="0.1">Germany is no longer a</h2>
+  <h2 data-d="0.3"><span class="strike" id="strike">“backup”</span> option.</h2>
+  <p data-d="1.3">For many Indian students, it's the</p>
+  <div class="big first" data-d="1.55" data-anim="pop">first choice.</div>
+</section>
+
+<!-- 10 cta -->
+<section class="scene s10" id="s10">
+  <div class="bm" data-d="0.1" data-anim="pop">
+    <svg viewBox="0 0 24 24" fill="#0d0e12"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>
+  </div>
+  <h2 data-d="0.35">Save this post</h2>
+  <p data-d="0.55">if you're planning to study in Germany.</p>
+  <div class="next" data-d="0.9">Follow the series — <span class="gold">Day 2</span> is next</div>
+</section>
+
+<div class="pager" id="pager"></div>
+<div class="swipe">Swipe <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const W = +params.get('w') || 1080, H = +params.get('h') || 1920;
+  document.documentElement.style.setProperty('--w', W + 'px');
+  document.documentElement.style.setProperty('--h', H + 'px');
+  if (params.get('mode') === 'carousel') document.body.classList.add('carousel');
+
+  // scene timeline (seconds)
+  const SCENES = [
+    ['s1', 0, 4.0], ['s2', 4.0, 9.0], ['s3', 9.0, 12.2],
+    ['s4', 12.2, 15.4], ['s5', 15.4, 18.8], ['s6', 18.8, 22.0], ['s7', 22.0, 25.2], ['s8', 25.2, 28.4],
+    ['s9', 28.4, 33.0], ['s10', 33.0, 37.0],
+  ];
+  const DURATION = 37.0;
+  const OUT = 0.35;
+  const clamp = x => Math.min(1, Math.max(0, x));
+  const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+  const easeBack = x => { x = clamp(x); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const fmt = n => n.toLocaleString('en-US');
+
+  function render(t, still) {
+    SCENES.forEach(([id, a, b], i) => {
+      const el = document.getElementById(id);
+      const local = still ? 99 : t - a;
+      let o = 0;
+      if (still) o = (i === t) ? 1 : 0;
+      else if (t >= a && t < b + OUT && !(i === SCENES.length - 1 && false)) {
+        o = (i === SCENES.length - 1) ? 1 : 1 - easeOut((t - b) / OUT);
+      }
+      el.style.opacity = o;
+      if (o === 0) return;
+      const exitShift = still || i === SCENES.length - 1 ? 0 : easeOut((t - b) / OUT) * -60;
+      el.style.transform = `translateY(${exitShift}px)`;
+      el.querySelectorAll('[data-d]').forEach(c => {
+        const p = (local - +c.dataset.d) / 0.6;
+        if (c.dataset.anim === 'pop') {
+          c.style.opacity = easeOut(p * 1.6);
+          c.style.transform = `scale(${0.6 + 0.4 * easeBack(p)})`;
+          c.style.transformOrigin = 'left center';
+        } else {
+          c.style.opacity = easeOut(p);
+          c.style.transform = `translateY(${(1 - easeOut(p)) * 50}px)`;
+        }
+        if (c.dataset.count) {
+          const k = easeOut((local - +c.dataset.d) / +c.dataset.countDur);
+          c.textContent = fmt(Math.round(+c.dataset.count * k / 10) * 10);
+        }
+      });
+      if (id === 's9') document.getElementById('strike').style.setProperty('--s', easeOut((local - 0.8) / 0.4));
+    });
+    // gentle drifting background
+    const tt = still ? t * 3.1 : t;
+    const A = document.getElementById('blobA'), B = document.getElementById('blobB');
+    A.style.transform = `translate(${W * 0.45 + Math.sin(tt * 0.35) * 160}px, ${-260 + Math.cos(tt * 0.27) * 180}px)`;
+    B.style.transform = `translate(${-360 + Math.cos(tt * 0.3) * 140}px, ${H - 520 + Math.sin(tt * 0.22) * 160}px)`;
+    if (still) { document.getElementById('pager').textContent = `${String(t + 1).padStart(2, '0')} / ${SCENES.length}`; document.querySelector('.swipe').style.visibility = t === SCENES.length - 1 ? 'hidden' : 'visible'; }
+  }
+  window.render = render;
+  window.DURATION = DURATION;
+  window.SCENE_COUNT = SCENES.length;
+  render(0);
+</script>
+</body>
+</html>
