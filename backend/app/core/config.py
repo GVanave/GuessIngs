@@ -40,13 +40,6 @@ class Settings(BaseSettings):
     max_upload_mb: int = 8
     tesseract_cmd: str | None = None
 
-    # Voice input: any OpenAI-compatible speech-to-text endpoint (OpenAI Whisper, Groq, self-hosted whisper)
-    stt_api_url: str = "https://api.openai.com/v1/audio/transcriptions"
-    stt_api_key: str | None = None
-    stt_model: str = "whisper-1"
-    stt_timeout_seconds: float = 60.0
-    max_audio_mb: int = 10
-
     # Rate limits (requests per window)
     rate_limit_auth_per_minute: int = 10
     rate_limit_analyze_per_minute: int = 20
@@ -61,7 +54,7 @@ class Settings(BaseSettings):
                 return "postgresql+psycopg://" + v[len(prefix):]
         return v
 
-    @field_validator("proxy_secret", "anthropic_api_key", "stt_api_key", "redis_url", mode="before")
+    @field_validator("proxy_secret", "anthropic_api_key", "redis_url", mode="before")
     @classmethod
     def _empty_is_none(cls, v):
         return v or None
@@ -76,10 +69,6 @@ class Settings(BaseSettings):
     @property
     def ai_available(self) -> bool:
         return bool(self.ai_enabled and self.anthropic_api_key)
-
-    @property
-    def stt_available(self) -> bool:
-        return bool(self.stt_api_key)
 
     def validate_production(self) -> None:
         if self.environment == "production":

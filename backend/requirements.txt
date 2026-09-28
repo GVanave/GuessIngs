@@ -13,4 +13,3 @@ pillow==12.3.0
 pytesseract==0.3.13
 anthropic==1.8.0
 redis==8.1.0
-httpx==0.28.1
