@@ -91,6 +91,10 @@ docker compose up --build       # http://localhost:3000
 
 AI is optional. Without `ANTHROPIC_API_KEY` the app uses Tesseract OCR and the deterministic knowledge base only.
 
+With a key, label photos are read with Claude vision (structured JSON output validated with Pydantic), unknown
+ingredients are classified, and results get a short AI-written summary. Default model: `claude-opus-5`
+(`AI_MODEL` to change). AI failures and refusals fall back gracefully to the deterministic path.
+
 ### Voice input (optional)
 
 `POST /api/voice/transcribe` (multipart: `file`, optional two-letter `language`) turns a spoken ingredient list into
@@ -107,9 +111,6 @@ The transcript is converted deterministically: spoken "comma" / "open bracket" /
 ```
 
 Review the text, then submit it to `POST /api/analyses` with `"source": "voice"`.
-With a key, label photos are read with Claude vision (structured JSON output validated with Pydantic), unknown
-ingredients are classified, and results get a short AI-written summary. Default model: `claude-opus-5`
-(`AI_MODEL` to change). AI failures and refusals fall back gracefully to the deterministic path.
 
 ## Deployment (Vercel + Render)
 
