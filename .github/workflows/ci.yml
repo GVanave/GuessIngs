@@ -59,4 +59,4 @@ jobs:
         with: { python-version: "3.11", cache: pip }
       - run: pip install -r requirements-dev.txt
       - run: ruff check .
-      - run: pytest
+      - run: pytest  # backend and Streamlit UI tests
