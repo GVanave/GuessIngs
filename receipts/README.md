@@ -76,12 +76,34 @@ Supported files: jpg, png, webp, heic/heif, pdf.
 `line_type` is one of `product`, `deposit` (Pfand), `deposit_return` (Leergut, negative), `discount` (negative), `other`.
 The prompt tells the model not to output card numbers, IBANs or loyalty IDs.
 
+## Evaluation
+
+Measures extraction quality on your own hand-checked receipts, so you can tell whether a prompt or model change
+made things better or worse. See [`samples/README.md`](samples/README.md) for how to build the sample set.
+
+```bash
+python -m receipt_extractor.eval samples/ --draft-missing        # first time: draft ground truth, then fix it by hand
+python -m receipt_extractor.eval samples/                        # run Gemini on every sample and score it
+python -m receipt_extractor.eval samples/ --model gemini-2.5-pro # compare another model
+python -m receipt_extractor.eval samples/ --predictions eval_runs/<run>   # re-score a saved run, no API calls
+python -m receipt_extractor.eval samples/ --only lidl            # just the matching samples
+```
+
+Each run is saved to `eval_runs/<timestamp>_<model>/` (git-ignored): one prediction JSON per receipt plus
+`report.json`. The console shows each receipt (missing/extra lines, wrong fields) and a summary:
+
+| Metric | Meaning |
+|--------|---------|
+| fully correct | Every header field right, every line found with no extras, every line's fields right |
+| header accuracy | store, date, time, total, payment method, number of lines |
+| line items P / R / F1 | Lines matched by equal total price (ties broken by text similarity) |
+| item field accuracy | line type, quantity, unit price, VAT code on matched lines |
+| name similarity | How close the readable names are to yours (0–100%) |
+| wrong but NOT flagged | **The number to watch**: wrong extractions that passed every consistency check |
+
 ## Tests
 
 ```bash
 pytest        # uses a fake Gemini client, no API key or network needed
 ruff check .
 ```
-
-Next step: collect 10–20 of your own receipts with hand-checked JSON in `samples/` and use them as a regression
-set when changing the prompt or model.
